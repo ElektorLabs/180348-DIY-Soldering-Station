@@ -1,8 +1,11 @@
 #include "frontend_140107.h"
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(_RS_ , _RW_ , _ENA_ , _D0_ , _D1_, _D2_, _D3_ , _D4_ , _D5_ , _D6_ , _D7_ );
-
+#ifndef LCD_4BIT_MODE
+  LiquidCrystal lcd(_RS_ , _RW_ , _ENA_ , _D0_ , _D1_, _D2_, _D3_ , _D4_ , _D5_ , _D6_ , _D7_ );
+#else 
+  LiquidCrystal lcd(_RS_ , _RW_ , _ENA_ , _D4_ , _D5_ , _D6_ , _D7_ );
+#endif
 void FE_140107::display_setup( void ){
   pinMode( _BACKLIGHT_ ,OUTPUT);                 // Set rotary button as input and enable pullup
   digitalWrite( _BACKLIGHT_, HIGH);

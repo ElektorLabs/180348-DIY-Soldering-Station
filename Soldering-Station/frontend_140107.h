@@ -20,6 +20,9 @@
 #define _D6_    ( 0 )
 #define _D7_    ( 0 )
 
+#define LCD_4BIT_MODE
+
+
 #define _BACKLIGHT_ ( 0 )
 
 

@@ -8,28 +8,38 @@
 #include "PWM_150500.h"
 #include "TEMP_150500.h"
 #include "CURRENT_150500.h"
+#include "VIN_150500.h"
 
 
 #define ROTARY_TERM_A ( 9 )
-#define ROTARY_TERM_B ( 8 )
-#define ROTARY_BTN ( 6 )
+#define ROTARY_TERM_B ( 6 )
+#define ROTARY_BTN ( 8 )
 
 /* ROTARY_CW_LEVEL can be HIGH or LOW */
 #define ROTARY_CW_LEVEL ( HIGH ) 
 
 #define MAX_PWM        512
-#define MAX_PWM_LIMIT  250
+#define MAX_PWM_LIMIT  500
+#define SAFE_PWM_VALUE 250
 
-#define ADC_AVG        20
+#define CURRENT_LIMIT ( 1500 )
+
+#define ADC_AVG        8
+
+/* This is specific for 150500 */
+#define VIN_MIN_MV     (10800)
 
 class HW_150500 {
     public:
         HW_150500(){};
-        void CheckLimits( void );
+        fsmstate_t CheckLimits( void );
         void Setup( void* cb_1ms_Timer );
+        overcurrent_t HasOvercurrent( void );
         FE_150500 Frontend;
         PWM_150500 PWM;
         TEMP_150500 Temp;
+        VIN_150500 Vin;
+        
     private:
       CURRENT_150500 Current;
 };

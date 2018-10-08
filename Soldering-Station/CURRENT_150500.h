@@ -20,7 +20,7 @@ class CURRENT_150500 {
     
 public: 
     CURRENT_150500(){};
-    uint16_t Read( uint8_t avg_cnt, uint16_t current_PWM);
+    uint16_t Read( uint8_t avg_cnt );
     uint16_t GetLastValue( void ) ;
     
 private:

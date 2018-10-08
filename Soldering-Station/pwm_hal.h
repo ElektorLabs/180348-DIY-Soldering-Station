@@ -1,3 +1,5 @@
+#ifndef SOLDERING_STATION_H_
+  #define SOLDERING_STATION_H_
 /**********************************************************************************************************
                                CLASS SolderingStation_PWM 
 **********************************************************************************************************
@@ -15,3 +17,5 @@ class SolderingStation_PWM {
    virtual uint16_t ReadPWMValue( void );
 
 };
+
+#endif

@@ -4,6 +4,7 @@
 typedef enum {
   NOFAULT =0,
   TEMPSENS_FAIL,
+  UNDERVOLTAGE,
   WAIT,
   RECOVER,
   POWERSAVE,
@@ -15,5 +16,11 @@ typedef enum {
   WELCOME_TITLE,
   WELCOME_TITLE_WAIT
 } fsmstate_t;
+
+typedef struct{
+  bool overcurrent;
+  uint16_t limit;
+  uint16_t value;
+} overcurrent_t;
 
 #endif

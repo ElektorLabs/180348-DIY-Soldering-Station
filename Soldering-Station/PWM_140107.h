@@ -25,6 +25,7 @@
         void On( uint16_t value );
         void Off( void );
         uint16_t ReadPWMValue( void );
+        
     };
 
 #endif

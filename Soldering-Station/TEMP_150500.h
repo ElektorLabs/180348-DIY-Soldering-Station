@@ -5,25 +5,15 @@
  #include "Arduino.h"
  #include "enums.h"
 
- 
-
-
-/* PIN definitions for the display */ 
-#define OLED_CS        12
-#define OLED_DC        14
-#define OLED_CLK       15
-#define OLED_DATA      16
-#define OLED_RESET     3
-
 
 /**********************************************************************************************************
-                               CLASS FE_150500 
+                               CLASS TEMP_150500 
 **********************************************************************************************************
- Baseclass:   SolderingStation_FE
- Function:    Derrived class for 150500 frontend
+ Baseclass:   N/A
+ Function:    Reads the IRON Temperatur
  Input:       None
  Output:      None
- Discription: Handels the frontend of 150500
+ Discription: Handels the temperatur read of 150500
 **********************************************************************************************************/
 class TEMP_150500 {
     

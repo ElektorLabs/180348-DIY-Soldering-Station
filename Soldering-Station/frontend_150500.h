@@ -36,6 +36,7 @@ public:
     void display_dim(bool dim );
     void display_show_Temperatur(  uint16_t dispTemperature, uint8_t HeatPwr_Percent, uint16_t setpoint, fsmstate_t state, uint16_t timestamp );
     void display_show_TempError( uint8_t ErrNo );
+    void display_show_Undervoltage(uint16_t Vin);
     void display_show_sleep( uint16_t timestamp );
 };
 #endif

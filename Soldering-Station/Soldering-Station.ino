@@ -10,6 +10,7 @@ Descriptoon  : A simple SMD soldering station is designed with an intension to m
 #include <EEPROM.h>
 
 #include "HW_150500.h"
+//#include "HW_140107.h"
 #include "enums.h"
 
 
@@ -23,8 +24,7 @@ Descriptoon  : A simple SMD soldering station is designed with an intension to m
 
 #define POWERSAVE_TIMEOUT ( 10 * 60 )
 
-/* This is specific for 150500 */
-#define VIN_MIN_MV     (11100)
+
 
 
 
@@ -47,8 +47,10 @@ volatile uint16_t LastActiveTemp=0;
 volatile uint8_t RotaryEncoderLocked=0;
 volatile uint16_t delay_ms = 0;
 volatile uint16_t btn_press_time=0;
+volatile uint8_t adjustPWM_Running=0;
+   
 
-int32_t previous_PWM,current_PWM;
+int32_t current_PWM;
 uint16_t display_Temp =0;
 uint16_t temperature_Refresh =0;                       
 bool powerSave_F = false;
@@ -68,7 +70,7 @@ void set_delay(uint16_t ms);
 
 
 HW_150500 Station;
-
+//HW_140107 Station;
 /**********************************************************************************************************
                                 void setup()        
 **********************************************************************************************************
@@ -84,8 +86,8 @@ void setup()
     setpoint = read_StoreTemperature();                 //Read previous saved temperature from EEPROM
     rotary_EncoderEnable();                             //Pin Change interrupt setting
     powerSave_TimerReset();                             //Reset timoutcounter
-    Station.PWM.On(0);                                          //PWM On ( Zero Power ) 
-    Station.Setup(Timer_1ms_Callback);                       //Hardwaresetup for the system                                  */  
+    Station.PWM.On(0);                                  //PWM On ( Zero Power ) 
+    Station.Setup(Timer_1ms_Callback);                  //Hardwaresetup for the system                                  */  
     state=WELCOME_LOGO;                                 // The next state the FSM in the main loop will enter 
 
 }
@@ -100,8 +102,8 @@ void setup()
 **********************************************************************************************************/
 void loop() 
 {
-      
-       switch(state){
+        /* This check can also return states and we can react to it */
+        switch(state){ 
          /*************************************************************
                                STATE WELCOME_LOGO       
           *************************************************************/
@@ -169,6 +171,7 @@ void loop()
            } 
 
           if(btn_press_time>5000){
+                current_PWM=0;
                 state = SLEEP;
                 rotary_EncoderDisable();              /* we disable rotary encoder  */
                 LastActiveTemp=setpoint;
@@ -183,11 +186,19 @@ void loop()
                               STATE TEMPSENS_FAIL       
         *************************************************************/   
         case TEMPSENS_FAIL:{   /* this is given by the fault monitor    */
-          Station.PWM.Off();   /* we turn off the pwm                   */
+          PWM_Off();   /* we turn off the pwm                   */
           Station.Frontend.display_show_TempError(ErrNo); 
           state = WAIT;
         } break;
 
+        /*************************************************************
+                              STATE TEMPSENS_FAIL       
+        *************************************************************/   
+        case UNDERVOLTAGE:{
+            PWM_Off();
+            Station.Frontend.display_show_Undervoltage(Station.Vin.Read(8)); 
+          
+        } break;        
         /*************************************************************
                               STATE WAIT       
         *************************************************************/   
@@ -256,7 +267,7 @@ void loop()
                               STATE SLEEP       
         *************************************************************/           
         case SLEEP:{
-          Station.PWM.Off(); //Shutown the PWM 
+          PWM_Off();
           Station.Frontend.display_dim(true);//display.dim(true); //Dim the display, if supported 
           display_Sleep();   //Show the sleep screen
           setpoint=0;           //We set the target to 0 degree, seem safe
@@ -337,18 +348,22 @@ void rotary_EncoderDisable()
 /**********************************************************************************************************
                                 void read_Current()        
 **********************************************************************************************************
- Function:    void read_Current()
+ Function:    void PWM_Off()
  Input:       None
  Output:      None
- Discription: convert discrete ADC values to voltage in mV & PWM duty cycle calculation.
-              if current exceeds 1.5A PWM is divided by 2.
+ Discription: Sets the PWM to zero Output ( Off ) 
 **********************************************************************************************************/
- void read_Current()
- {
-  
- 
+void PWM_Off()
+{
+  cli();
+    adjustPWM_Running=1;
+    current_PWM=0;
+    adjustPWM_Running=0;
+  sei();
 }  
- 
+
+
+
 
 /**********************************************************************************************************
                                 void pwm_Adjust(void)        
@@ -360,10 +375,12 @@ void rotary_EncoderDisable()
 **********************************************************************************************************/
 void pwm_Adjust(void)
 {
-  
+    uint32_t TempCurrentLimit=0;
     int16_t temp_Diff=0;
-    uint16_t temperature=999;
-    
+    uint16_t temperature=999;  
+    cli();
+    adjustPWM_Running=1;
+    sei();
     Station.PWM.Off();                          //switch off heater         
     _delay_ms(10);                              //wait for some time (to get low pass filter in steady state)
     temperature = Station.Temp.Read(ADC_AVG);
@@ -384,9 +401,11 @@ void pwm_Adjust(void)
         current_PWM = (int32_t)temp_Diff  * (int32_t)setpoint/ (int32_t)6 ;
      
       }
-      if(current_PWM > MAX_PWM_LIMIT)   
+      
+      if(current_PWM > MAX_PWM_LIMIT){   
          current_PWM = MAX_PWM_LIMIT;
-      previous_PWM = current_PWM;
+      }
+      
         
     } 
     else if(setpoint < temperature)
@@ -401,23 +420,75 @@ void pwm_Adjust(void)
         }
         else
         {
+          if(current_PWM>0){
+            if( ((int32_t)current_PWM/(int32_t)7) > 0){
+              
+              current_PWM -= (int32_t)current_PWM/(int32_t)7;
+              if( ((int32_t)current_PWM%(int32_t)7) > 3){
+                if(current_PWM>0){
+                  current_PWM--;
+                }
+              }
+            } else {
+              current_PWM--;
+            }
+          }
           
-          current_PWM -= (int32_t)current_PWM/(int32_t)7;
-          previous_PWM = current_PWM;
         }
         
         if(current_PWM < 0)   
            current_PWM = 0;
         
     } else {
-      current_PWM = previous_PWM;  
+      current_PWM = current_PWM;  
     }
-    
 
-    Station.PWM.On(current_PWM);
     HeatPwr_Percent= ((current_PWM*100) / MAX_PWM_LIMIT );
+    adjustPWM_Running=0;
+    
+   
+    
 }
 
+
+uint16_t  AdjustCurrent(uint16_t PWM_Value){
+  static uint8_t Limit=100;
+  uint16_t PWM_Raw = PWM_Value;
+   if(adjustPWM_Running!=0){
+      return;
+   }
+   overcurrent_t Overcurrent;
+    if(Limit>100){
+      Limit=100;
+    }
+    PWM_Value=(int32_t)PWM_Value * (int32_t)Limit;
+    PWM_Value=(int32_t)PWM_Value / 100;
+    
+    if(PWM_Value>=MAX_PWM_LIMIT){
+      PWM_Value = MAX_PWM_LIMIT;
+    }
+   Station.PWM.On(PWM_Value);
+    
+   Overcurrent = Station.HasOvercurrent();
+    if(Overcurrent.overcurrent != false ){
+      if(Limit<=0){   
+        Limit=1;
+      } else {
+        Limit--; 
+      }
+      PWM_Value=(int32_t)PWM_Value * (int32_t)Limit;
+      PWM_Value=(int32_t)PWM_Value / 100;
+      
+    } else {
+      if(Limit<100){
+        Limit++;
+        
+      }
+      
+    }
+    Station.PWM.On(PWM_Value);
+    return Limit;
+}
 /*************************************************************************************************************
  *                                          powerSave_TimerReset()
  *************************************************************************************************************
@@ -445,7 +516,7 @@ void powerSave_TimerReset(){
  *************************************************************************************************************/    
 void display_Sleep()
 {
-      Station.PWM.Off();     //switch PWM off until rotary switch is pressed
+      PWM_Off();     //switch PWM off until rotary switch is pressed
       /* Update display */
       Station.Frontend.display_show_sleep(timestamp);
       /* End of update */
@@ -464,8 +535,10 @@ void display_Sleep()
 void Timer_1ms_Callback( void )
 {
    static uint16_t onesecond_prescaler=0;
+   static uint16_t _100ms_prescaler=0;
    static uint8_t input_a_buffer=0;
-   static uint16_t calldelta=0; 
+   static uint16_t calldelta=0;
+   overcurrent_t Overcurrent; 
 
    if(delay_ms>0){
     delay_ms--;
@@ -571,7 +644,12 @@ void Timer_1ms_Callback( void )
     onesecond_prescaler++;
    }
 
-   
+   if(_100ms_prescaler>=10){
+    _100ms_prescaler=0;
+    AdjustCurrent(current_PWM);
+   } else {
+    _100ms_prescaler++;
+   }
 }
 /*************************************************************************************************************
  *                                          read_StoreTemperature()
@@ -625,6 +703,7 @@ void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t targ
   static uint16_t prev_temp=0;
   static uint8_t failcount=0; 
   static uint8_t recovery_delay=0;
+  static uint8_t undervoltage_cnt=0;
 
   /* this is what we need only during the call of this function */
   int32_t delta_t_target= (int32_t)target-(int32_t)temperature;
@@ -665,6 +744,17 @@ void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t targ
         state=TEMPSENS_FAIL;
         recovery_delay=10;
       }
+
+      if(Station.CheckLimits()==UNDERVOLTAGE){
+        undervoltage_cnt++;
+        if(undervoltage_cnt>10){
+          state=UNDERVOLTAGE;
+        }
+      } else {
+        undervoltage_cnt=0;
+      }
+
+      
     } 
     break;
     case SLEEP:
@@ -702,6 +792,13 @@ void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t targ
       
     }
 
+    case UNDERVOLTAGE:{
+
+      if(Station.CheckLimits()!=UNDERVOLTAGE){
+       state=NOFAULT;
+       undervoltage_cnt=0;
+      }
+    } break;
     default:{
       _NOP();
     } break;

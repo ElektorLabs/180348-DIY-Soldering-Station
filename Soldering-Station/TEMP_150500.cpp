@@ -3,14 +3,14 @@
 uint16_t TEMP_150500::Read( uint8_t avg_cnt){
     
     uint16_t temperature=999;
-    uint16_t samples_A1=0;
+    uint16_t samples=0;
     uint16_t ADCvoltage =0;  
     for(uint8_t i =0;i< avg_cnt;i++)
     {
-      samples_A1 += analogRead(A1);
+      samples += analogRead(A0);
     } 
-    samples_A1 = samples_A1 / avg_cnt;
-    ADCvoltage = map(samples_A1,0,1023,0,5000);
+    samples = samples / avg_cnt;
+    ADCvoltage = map(samples,0,1023,0,5000);
 
    if(ADCvoltage>2000){
       temperature=999;

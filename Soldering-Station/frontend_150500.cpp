@@ -151,6 +151,7 @@ void FE_150500::display_show_Temperatur(uint16_t dispTemperature, uint8_t HeatPw
 void FE_150500::display_show_TempError(uint8_t ErrNo){
 
       display.clearDisplay();
+      display.setTextColor(WHITE);
       display.drawXBitmap(0,0,TempFault_bits,TempFault_width,TempFault_height,WHITE);
       display.setTextSize(1); 
       display.setCursor(64,0);
@@ -160,6 +161,33 @@ void FE_150500::display_show_TempError(uint8_t ErrNo){
       display.setCursor(64,12);
       display.print("FAULT:E");
       display.print(ErrNo);
+      display.display();  
+
+}
+
+/**********************************************************************************************************
+                                void display_show_TempError()        
+**********************************************************************************************************
+ Function:    void display_show_TempError()
+ Input:       uint8_t ErrNo
+ Output:      None
+ Discription: Shows the temperaturerror screen
+**********************************************************************************************************/
+void FE_150500::display_show_Undervoltage(uint16_t Vin){
+
+      display.clearDisplay();
+      display.setTextColor(WHITE);
+      display.setTextSize(1); 
+      display.setCursor(16,0);
+      display.print("Undervoltage");
+
+      /* We now display the fault case */
+      display.setCursor(16,12);
+      display.print("Input: ");
+      display.print(Vin/1000);
+      display.print(".");
+      display.print(Vin%1000);
+      display.print("V");
       display.display();  
 
 }
