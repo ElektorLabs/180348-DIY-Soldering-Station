@@ -1,5 +1,13 @@
 #include "CURRENT_150500.h"
 
+/**********************************************************************************************************
+                                uint16_t Read( uint8_t )        
+**********************************************************************************************************
+ Function:    uint16_t Read( uint8_t )     
+ Input:       uint16_t avg_cnt
+ Output:      uint16_t Current in mA
+ Discription: Reads the Current in mA
+**********************************************************************************************************/
 uint16_t CURRENT_150500::Read( uint8_t avg_cnt){
     
    
@@ -25,6 +33,15 @@ uint16_t CURRENT_150500::Read( uint8_t avg_cnt){
   return LastReadCurrent;
 }
 
+/**********************************************************************************************************
+                                uint16_t GetLastValue( void )        
+**********************************************************************************************************
+ Function:    uint16_t GetLastValue( void )        
+ Input:       void
+ Output:      uint16_t Current in mA
+ Discription: Returns the last converted value 
+**********************************************************************************************************/
 uint16_t CURRENT_150500::GetLastValue( void ){
     return LastReadCurrent;
 }
+

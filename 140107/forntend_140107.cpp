@@ -1,3 +1,4 @@
+#ifdef _PLATFORM_HW_140107_ 
 #include "frontend_140107.h"
 #include <LiquidCrystal.h>
 
@@ -88,3 +89,4 @@ void FE_140107::display_show_sleep( uint16_t timestamp){
    lcd.print("  Sleepmode     ");   
  
 }
+#endif

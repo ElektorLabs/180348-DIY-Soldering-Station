@@ -1,6 +1,7 @@
 #ifndef HW_140107_H_
  #define HW_140107_H_
 
+#define _PLATFORM_HW_140107_
 #include <TimerOne.h>
 #include "enums.h"
  /* This is for 140107 */
@@ -26,10 +27,13 @@ class HW_140107 {
     public:
         HW_140107(){};
         fsmstate_t CheckLimits( void );
+        void  AdjustCurrent(uint16_t PWM_Value);
+        void ShowUndervoltage(){ };
         void Setup( void* cb_1ms_Timer );
         FE_140107 Frontend;
         PWM_140107 PWM;
         TEMP_140107 Temp;
+        
     private:
       
 };

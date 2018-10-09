@@ -1,5 +1,6 @@
-#ifndef CURRENT_150500_H_
- #define CURRENT_150500_H_ 
+#ifdef _PLATFORM_HW_140107_ 
+#ifndef CURRENT_140107_H_
+ #define CURRENT_140107_H_ 
  
  /* includes for this class */
  #include "Arduino.h"
@@ -16,16 +17,16 @@
  Output:      None
  Discription: Handels the frontend of 150500
 **********************************************************************************************************/
-class CURRENT_150500 {
+class CURRENT_140107 {
     
 public: 
-    CURRENT_150500(){};
-    uint16_t Read( uint8_t avg_cnt );
-    
+    CURRENT_140107(){};
+    uint16_t Read( uint8_t avg_cnt, uint16_t current_PWM);
     uint16_t GetLastValue( void ) ;
     
 private:
     uint16_t LastReadCurrent=0;
 
 };
+#endif
 #endif

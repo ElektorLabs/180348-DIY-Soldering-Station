@@ -14,3 +14,7 @@ fsmstate_t HW_140107::CheckLimits(){
   return RetVal;
 }
 
+void  HW_140107::AdjustCurrent(uint16_t PWM_Value){
+   PWM.On(PWM_Value);
+}
+

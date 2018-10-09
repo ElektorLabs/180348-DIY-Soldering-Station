@@ -1,5 +1,6 @@
 #ifndef HW_150500_H_
  #define HW_150500_H_
+ 
 
 #include <TimerOne.h>
 #include "enums.h"
@@ -29,19 +30,32 @@
 /* This is specific for 150500 */
 #define VIN_MIN_MV     (10800)
 
+/**********************************************************************************************************
+                               CLASS HW_150500 
+**********************************************************************************************************
+ Baseclass:   SolderingStation Hardware
+ Function:    Base for the HW Platform
+ Input:       None
+ Output:      None
+ Discription: Basic class for the Hardware
+**********************************************************************************************************/
 class HW_150500 {
     public:
         HW_150500(){};
-        fsmstate_t CheckLimits( void );
-        void Setup( void* cb_1ms_Timer );
-        overcurrent_t HasOvercurrent( void );
         FE_150500 Frontend;
         PWM_150500 PWM;
         TEMP_150500 Temp;
-        VIN_150500 Vin;
+       
+
+        fsmstate_t CheckLimits( void );
+        void Setup( void* cb_1ms_Timer );
+        void AdjustCurrent( uint16_t PWM_Value);
+        void ShowUndervoltage();
         
     private:
       CURRENT_150500 Current;
+      overcurrent_t HasOvercurrent( void );
+      VIN_150500 Vin;
 };
 
 #endif

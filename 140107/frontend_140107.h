@@ -1,3 +1,4 @@
+#ifdef _PLATFORM_HW_140107_ 
 #ifndef FRONTEND_140107_H_
  #define FRONTEND_140107_H_ 
  
@@ -39,4 +40,5 @@ public:
     void display_show_TempError( uint8_t ErrNo );
     void display_show_sleep( uint16_t timestamp );
 };
+#endif
 #endif

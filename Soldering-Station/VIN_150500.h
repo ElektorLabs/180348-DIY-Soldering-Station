@@ -1,31 +1,29 @@
-#ifndef CURRENT_150500_H_
- #define CURRENT_150500_H_ 
+#ifndef VIN_150500_H_
+ #define VIN_150500_H_ 
  
  /* includes for this class */
  #include "Arduino.h"
  #include "enums.h"
 
 
-
 /**********************************************************************************************************
-                               CLASS FE_150500 
+                               CLASS TEMP_150500 
 **********************************************************************************************************
- Baseclass:   SolderingStation_FE
- Function:    Derrived class for 150500 frontend
+ Baseclass:   N/A
+ Function:    Reads the IRON Temperatur
  Input:       None
  Output:      None
- Discription: Handels the frontend of 150500
+ Discription: Handels the temperatur read of 150500
 **********************************************************************************************************/
-class CURRENT_150500 {
+class VIN_150500 {
     
 public: 
-    CURRENT_150500(){};
-    uint16_t Read( uint8_t avg_cnt );
-    
+    VIN_150500(){};
+    uint16_t Read( uint8_t avg_cnt);
     uint16_t GetLastValue( void ) ;
     
 private:
-    uint16_t LastReadCurrent=0;
+    uint16_t LastReadVIN=0;
 
 };
 #endif

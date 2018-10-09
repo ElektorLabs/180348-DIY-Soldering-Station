@@ -8,10 +8,12 @@ Descriptoon  : A simple SMD soldering station is designed with an intension to m
 ***********************************************************************************************************************/
 
 #include <EEPROM.h>
-
-#include "HW_150500.h"
-//#include "HW_140107.h"
 #include "enums.h"
+
+ #include "HW_150500.h"
+ HW_150500 Station;
+
+
 
 
 
@@ -69,8 +71,7 @@ void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t targ
 void set_delay(uint16_t ms);
 
 
-HW_150500 Station;
-//HW_140107 Station;
+
 /**********************************************************************************************************
                                 void setup()        
 **********************************************************************************************************
@@ -196,7 +197,7 @@ void loop()
         *************************************************************/   
         case UNDERVOLTAGE:{
             PWM_Off();
-            Station.Frontend.display_show_Undervoltage(Station.Vin.Read(8)); 
+            Station.ShowUndervoltage();
           
         } break;        
         /*************************************************************
@@ -375,7 +376,6 @@ void PWM_Off()
 **********************************************************************************************************/
 void pwm_Adjust(void)
 {
-    uint32_t TempCurrentLimit=0;
     int16_t temp_Diff=0;
     uint16_t temperature=999;  
     cli();
@@ -451,44 +451,7 @@ void pwm_Adjust(void)
 }
 
 
-uint16_t  AdjustCurrent(uint16_t PWM_Value){
-  static uint8_t Limit=100;
-  uint16_t PWM_Raw = PWM_Value;
-   if(adjustPWM_Running!=0){
-      return;
-   }
-   overcurrent_t Overcurrent;
-    if(Limit>100){
-      Limit=100;
-    }
-    PWM_Value=(int32_t)PWM_Value * (int32_t)Limit;
-    PWM_Value=(int32_t)PWM_Value / 100;
-    
-    if(PWM_Value>=MAX_PWM_LIMIT){
-      PWM_Value = MAX_PWM_LIMIT;
-    }
-   Station.PWM.On(PWM_Value);
-    
-   Overcurrent = Station.HasOvercurrent();
-    if(Overcurrent.overcurrent != false ){
-      if(Limit<=0){   
-        Limit=1;
-      } else {
-        Limit--; 
-      }
-      PWM_Value=(int32_t)PWM_Value * (int32_t)Limit;
-      PWM_Value=(int32_t)PWM_Value / 100;
-      
-    } else {
-      if(Limit<100){
-        Limit++;
-        
-      }
-      
-    }
-    Station.PWM.On(PWM_Value);
-    return Limit;
-}
+
 /*************************************************************************************************************
  *                                          powerSave_TimerReset()
  *************************************************************************************************************
@@ -538,7 +501,6 @@ void Timer_1ms_Callback( void )
    static uint16_t _100ms_prescaler=0;
    static uint8_t input_a_buffer=0;
    static uint16_t calldelta=0;
-   overcurrent_t Overcurrent; 
 
    if(delay_ms>0){
     delay_ms--;
@@ -646,7 +608,9 @@ void Timer_1ms_Callback( void )
 
    if(_100ms_prescaler>=10){
     _100ms_prescaler=0;
-    AdjustCurrent(current_PWM);
+     if(adjustPWM_Running==0){
+        Station.AdjustCurrent(current_PWM);    
+     }
    } else {
     _100ms_prescaler++;
    }
@@ -735,6 +699,7 @@ void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t targ
       
       if(failcount>6){
          ErrNo=1;
+         failcount=0;
          state=TEMPSENS_FAIL;
          recovery_delay=10;
        }

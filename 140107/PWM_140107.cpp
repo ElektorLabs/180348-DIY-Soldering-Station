@@ -1,3 +1,4 @@
+#ifdef _PLATFORM_HW_140107_ 
 #include "PWM_140107.h"
 
 #include "TimerOne.h"
@@ -62,5 +63,5 @@ uint16_t PWM_140107::ReadPWMValue( void ) {
     
 }
 
-    
+#endif
     

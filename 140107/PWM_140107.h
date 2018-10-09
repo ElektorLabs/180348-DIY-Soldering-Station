@@ -1,3 +1,4 @@
+#ifdef _PLATFORM_HW_140107_ 
 #ifndef PWM_140107_H_
  #define PWM_140107_H_
 
@@ -28,4 +29,5 @@
         
     };
 
+#endif
 #endif
