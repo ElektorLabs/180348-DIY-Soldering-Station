@@ -25,7 +25,7 @@ Descriptoon  : A simple SMD soldering station is designed with an intension to m
 #define MIN_TEMP       ( 50 )
 
 #define POWERSAVE_TIMEOUT ( 10 * 60 )
-
+#define DETLA_REG ( 50 )
 
 
 
@@ -50,7 +50,7 @@ volatile uint8_t RotaryEncoderLocked=0;
 volatile uint16_t delay_ms = 0;
 volatile uint16_t btn_press_time=0;
 volatile uint8_t adjustPWM_Running=0;
-   
+volatile uint16_t Ticks=0;
 
 int32_t current_PWM;
 uint16_t display_Temp =0;
@@ -112,18 +112,18 @@ void loop()
            Station.Frontend.display_welcome_logo();
            set_delay(2000);                        /* delay for the next state */
            state = WELCOME_LOGO_WAIT; 
-        
         } break;
 
         /*************************************************************
                               STATE WELCOME_LOGO_WAIT       
         *************************************************************/
         case WELCOME_LOGO_WAIT:{
-           if(0==delay_ms){      
+          if(0==delay_ms){      
             state = WELCOME_TITLE;                  /* the next state the fsm will enter */
           } else if( digitalRead( ROTARY_BTN ) == LOW ){         /* if the user pressed the button we skip the intro */
             state= NOFAULT;
           }
+          
         } break;
 
         /*************************************************************
@@ -376,77 +376,89 @@ void PWM_Off()
 **********************************************************************************************************/
 void pwm_Adjust(void)
 {
+    static uint16_t LastRun=0;
+    uint16_t call_delta=0;
     int16_t temp_Diff=0;
-    uint16_t temperature=999;  
-    cli();
-    adjustPWM_Running=1;
-    sei();
-    Station.PWM.Off();                          //switch off heater         
-    _delay_ms(10);                              //wait for some time (to get low pass filter in steady state)
-    temperature = Station.Temp.Read(ADC_AVG);
+    uint16_t temperature=999;
     
-    if(setpoint > temperature)
-    {
-      temp_Diff = (int32_t)setpoint - (int32_t)temperature;
-           
-      if(temp_Diff < 3)
-      {  
-
-        current_PWM +=(int32_t)5;
-        
-      }
-      else
+    if(LastRun>Ticks){
+      call_delta=UINT16_MAX-LastRun+Ticks;
+    } else {
+      call_delta=Ticks-LastRun;
+    }
+    if(call_delta< DETLA_REG ){
+      _NOP();
+    } else {
+      LastRun=Ticks;
+      cli();
+      adjustPWM_Running=1;
+      sei();
+      Station.PWM.Off();                          //switch off heater         
+      _delay_ms(10);                              //wait for some time (to get low pass filter in steady state)
+      temperature = Station.Temp.Read(ADC_AVG);
+      
+      if(setpoint > temperature)
       {
-         
-        current_PWM = (int32_t)temp_Diff  * (int32_t)setpoint/ (int32_t)6 ;
-     
-      }
-      
-      if(current_PWM > MAX_PWM_LIMIT){   
-         current_PWM = MAX_PWM_LIMIT;
-      }
-      
-        
-    } 
-    else if(setpoint < temperature)
-    {
-        temp_Diff = (int32_t)temperature - (int32_t)setpoint;
-        
-        if(temp_Diff > 2)
-        {
-         
-          current_PWM = 0;
-
+        temp_Diff = (int32_t)setpoint - (int32_t)temperature;
+             
+        if(temp_Diff < 3)
+        {  
+  
+          current_PWM +=(int32_t)5;
+          
         }
         else
         {
-          if(current_PWM>0){
-            if( ((int32_t)current_PWM/(int32_t)7) > 0){
-              
-              current_PWM -= (int32_t)current_PWM/(int32_t)7;
-              if( ((int32_t)current_PWM%(int32_t)7) > 3){
-                if(current_PWM>0){
-                  current_PWM--;
-                }
-              }
-            } else {
-              current_PWM--;
-            }
-          }
-          
+           
+          current_PWM = (int32_t)temp_Diff  * (int32_t)setpoint/ (int32_t)6 ;
+       
         }
         
-        if(current_PWM < 0)   
-           current_PWM = 0;
+        if(current_PWM > MAX_PWM_LIMIT){   
+           current_PWM = MAX_PWM_LIMIT;
+        }
         
-    } else {
-      current_PWM = current_PWM;  
-    }
-
-    HeatPwr_Percent= ((current_PWM*100) / MAX_PWM_LIMIT );
-    adjustPWM_Running=0;
-    
-   
+          
+      } 
+      else if(setpoint < temperature)
+      {
+          temp_Diff = (int32_t)temperature - (int32_t)setpoint;
+          
+          if(temp_Diff > 2)
+          {
+           
+            current_PWM = 0;
+  
+          }
+          else
+          {
+            if(current_PWM>0){
+              if( ((int32_t)current_PWM/(int32_t)7) > 0){
+                
+                current_PWM -= (int32_t)current_PWM/(int32_t)7;
+                if( ((int32_t)current_PWM%(int32_t)7) > 3){
+                  if(current_PWM>0){
+                    current_PWM--;
+                  }
+                }
+              } else {
+                current_PWM--;
+              }
+            }
+            
+          }
+          
+          if(current_PWM < 0)   
+             current_PWM = 0;
+          
+      } else {
+        current_PWM = current_PWM;  
+      }
+  
+      HeatPwr_Percent= ((current_PWM*100) / MAX_PWM_LIMIT );
+      adjustPWM_Running=0;
+      
+    }   
     
 }
 
@@ -502,6 +514,7 @@ void Timer_1ms_Callback( void )
    static uint8_t input_a_buffer=0;
    static uint16_t calldelta=0;
 
+   Ticks++;
    if(delay_ms>0){
     delay_ms--;
    }
