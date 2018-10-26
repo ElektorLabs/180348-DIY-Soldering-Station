@@ -96,6 +96,8 @@ void  HW_150500::AdjustCurrent(uint16_t PWM_Value){
       PWM_Value = MAX_PWM_LIMIT;
     }
    PWM.On(PWM_Value);
+
+
     
    Overcurrent = HasOvercurrent();
     if(Overcurrent.overcurrent != false ){

@@ -20,8 +20,9 @@
 #define ROTARY_CW_LEVEL ( HIGH ) 
 
 #define MAX_PWM        512
-#define MAX_PWM_LIMIT  500
+#define MAX_PWM_LIMIT  250
 #define SAFE_PWM_VALUE 250
+#define CURRENT_NO_ADJ 
 
 #define CURRENT_LIMIT ( 1500 )
 
