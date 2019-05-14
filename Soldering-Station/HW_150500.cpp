@@ -11,11 +11,16 @@ volatile uint16_t VoltAVG[VOLTAVGSIZE] = { 0xFF,};
  Output:      None
  Discription: Dose the init for the HW of the Station also sets the callback for the 1ms timer
 **********************************************************************************************************/
-void HW_150500::Setup( void* cb_1ms_Timer ){
+void HW_150500::Setup( void* cb_0_1ms_Timer ){
     Frontend.display_setup();
     pinMode( ROTARY_BTN ,INPUT_PULLUP);              // Set rotary button as input and enable pullup
-    Timer1.initialize(1000);                         //1ms interrupts from the timer
-    Timer1.attachInterrupt(cb_1ms_Timer);            //Attatch the function to the isr callback
+    
+    //For First Labbuid proto this was okay for mass production we need to modify this 
+    //Timer1.initialize(1000);                         //1ms interrupts from the timer
+      //We go down to 100us ( )
+    Timer1.initialize(250);                         //0.1ms interrupts from the timer runns every 1600 cpu cycle
+    
+    Timer1.attachInterrupt(cb_0_1ms_Timer);            //Attatch the function to the isr callback
 }
 
 

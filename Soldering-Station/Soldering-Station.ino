@@ -5,12 +5,14 @@ MCU used     : ATmega32u4
 Descriptoon  : A simple SMD soldering station is designed with an intension to make a compact version of a temperature
                control unit for the weller tip. This soldering device can be used to heat up the soldering bit to a 
                temperature ranging from 50 – 450 degree Celsius and also to check the temperature of the soldering bit.
+version       : 1.1 ( 14.05.2019 )
 ***********************************************************************************************************************/
 
 #include <EEPROM.h>
 #include "enums.h"
 
  #include "HW_150500.h"
+ //#include "serailconsole.h"
  HW_150500 Station;
 
 
@@ -65,7 +67,7 @@ void rotary_EncoderDisable( void );
 uint16_t read_StoreTemperature(void);
 void write_StoreTemperature(uint16_t tempValue);   
 void pwm_Adjust(void);
-void Timer_1ms_Callback( void );
+void Timer_250us_Callback( void );
 void powerSave_TimerReset( void );
 void faultMonitor( uint8_t heatpwr_percent, uint16_t temperature , uint16_t target);
 void set_delay(uint16_t ms);
@@ -83,12 +85,12 @@ void set_delay(uint16_t ms);
 void setup()
 {  
    
-   
+    Serial.begin(115200);
     setpoint = read_StoreTemperature();                 //Read previous saved temperature from EEPROM
     rotary_EncoderEnable();                             //Pin Change interrupt setting
     powerSave_TimerReset();                             //Reset timoutcounter
     Station.PWM.On(0);                                  //PWM On ( Zero Power ) 
-    Station.Setup(Timer_1ms_Callback);                  //Hardwaresetup for the system                                  */  
+    Station.Setup(Timer_250us_Callback);                  //Hardwaresetup for the system                                  
     state=WELCOME_LOGO;                                 // The next state the FSM in the main loop will enter 
 
 }
@@ -103,6 +105,7 @@ void setup()
 **********************************************************************************************************/
 void loop() 
 {
+      
         /* This check can also return states and we can react to it */
         switch(state){ 
          /*************************************************************
@@ -507,17 +510,49 @@ void display_Sleep()
  Output:      None 
  Description: Handels the fault monitor, powersave and the rotary encoder, updates the display temp
 **********************************************************************************************************/
-void Timer_1ms_Callback( void )
+void Timer_250us_Callback( void )
 {
    static uint16_t onesecond_prescaler=0;
    static uint16_t _100ms_prescaler=0;
    static uint8_t input_a_buffer=0;
    static uint16_t calldelta=0;
+   static uint8_t ms_prescaler=0;
 
-   Ticks++;
-   if(delay_ms>0){
-    delay_ms--;
+   if(ms_prescaler>=3){
+    ms_prescaler=0;
+    Ticks++;
+    if(delay_ms>0){
+      delay_ms--;
+    }
+
+     if(onesecond_prescaler>1000){
+       onesecond_prescaler=0;
+       timestamp++;
+       display_Temp = Station.Temp.GetLastValue();       
+       if(powerSave_C == POWERSAVE_TIMEOUT )
+       {
+            powerSave_F = true;   
+       }else if ( powerSave_C > POWERSAVE_TIMEOUT ) {
+          _NOP();
+       } else {
+          powerSave_C++;
+       }
+       faultMonitor( HeatPwr_Percent, Station.Temp.GetLastValue(),setpoint);
+   } else {
+    onesecond_prescaler++;
    }
+
+   if(_100ms_prescaler>=10){
+    _100ms_prescaler=0;
+     if(adjustPWM_Running==0){
+        Station.AdjustCurrent(current_PWM);    
+     }
+   } else {
+    _100ms_prescaler++;
+   }
+  } else {
+    ms_prescaler++;
+  }
 
   if(  digitalRead( ROTARY_BTN ) == LOW ){
     if(btn_press_time<UINT16_MAX){
@@ -602,31 +637,7 @@ void Timer_1ms_Callback( void )
       setpoint=MAX_TEMP;
    }
    
-   if(onesecond_prescaler>1000){
-       onesecond_prescaler=0;
-       timestamp++;
-       display_Temp = Station.Temp.GetLastValue();       
-       if(powerSave_C == POWERSAVE_TIMEOUT )
-       {
-            powerSave_F = true;   
-       }else if ( powerSave_C > POWERSAVE_TIMEOUT ) {
-          _NOP();
-       } else {
-          powerSave_C++;
-       }
-       faultMonitor( HeatPwr_Percent, Station.Temp.GetLastValue(),setpoint);
-   } else {
-    onesecond_prescaler++;
-   }
-
-   if(_100ms_prescaler>=10){
-    _100ms_prescaler=0;
-     if(adjustPWM_Running==0){
-        Station.AdjustCurrent(current_PWM);    
-     }
-   } else {
-    _100ms_prescaler++;
-   }
+  
 }
 /*************************************************************************************************************
  *                                          read_StoreTemperature()

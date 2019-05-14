@@ -12,12 +12,19 @@
 #include "VIN_150500.h"
 
 
+/*
 #define ROTARY_TERM_A ( 9 )
 #define ROTARY_TERM_B ( 6 )
+*/
+
+
+#define ROTARY_TERM_A ( 6 )
+#define ROTARY_TERM_B ( 9 )
+
 #define ROTARY_BTN ( 8 )
 
 /* ROTARY_CW_LEVEL can be HIGH or LOW */
-#define ROTARY_CW_LEVEL ( HIGH ) 
+#define ROTARY_CW_LEVEL ( LOW ) 
 
 #define MAX_PWM        512
 #define MAX_PWM_LIMIT  250
@@ -49,7 +56,7 @@ class HW_150500 {
        
 
         fsmstate_t CheckLimits( void );
-        void Setup( void* cb_1ms_Timer );
+        void Setup( void* cb_250us_Timer );
         void AdjustCurrent( uint16_t PWM_Value);
         void ShowUndervoltage();
         
