@@ -16,3 +16,17 @@ Be aware that after flashing the new software, your current temperature settings
 You need TimerOne library installed in your libs path.
 
 
+### Serialinterface ( since firmware 1.2 )
+
+The USB-connector on the station works as serial device. If you plug it in your computer you can than access
+the serial port with the terminal form the arduino ide or putty / puttytel or any other serial terminal. If 
+you are forced to set a baudrate choose 115200, as this is serial over usb the device basically don't care. 
+As we have the leonardo bootloader on the chip don't user 1200 baud, as this may triggers the bootlloader. 
+
+##### Supported commands
+
+* set/get setpoint [xxx] -> This will set or get the setpoint
+* get temperature        -> This will report the current temperature
+* clear error            -> If an error is shown this will clear it
+* help                   -> This will show the help
+ 

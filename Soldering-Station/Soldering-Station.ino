@@ -12,7 +12,7 @@ version       : 1.1 ( 14.05.2019 )
 #include "enums.h"
 
  #include "HW_150500.h"
- //#include "serailconsole.h"
+ #include "serailconsole.h"
  HW_150500 Station;
 
 
@@ -53,6 +53,7 @@ volatile uint16_t delay_ms = 0;
 volatile uint16_t btn_press_time=0;
 volatile uint8_t adjustPWM_Running=0;
 volatile uint16_t Ticks=0;
+volatile uint8_t clear_error=0;
 
 int32_t current_PWM;
 uint16_t display_Temp =0;
@@ -105,7 +106,7 @@ void setup()
 **********************************************************************************************************/
 void loop() 
 {
-      
+        SerialConsoleProcess();
         /* This check can also return states and we can react to it */
         switch(state){ 
          /*************************************************************
@@ -151,6 +152,7 @@ void loop()
                               STATE NOFAULT       
         *************************************************************/
         case NOFAULT: {
+           clear_error=0;
           Station.Frontend.display_show_Temperatur(display_Temp,HeatPwr_Percent,setpoint,state,timestamp);
           write_StoreTemperature(setpoint);        //store "set temperature" in eeprom
           pwm_Adjust();
@@ -212,9 +214,10 @@ void loop()
             } else {
               Station.Frontend.display_invert(0);//display.invertDisplay(0);
             }
-           if( digitalRead( ROTARY_BTN ) == LOW )  /* if the user pressed the button we try to recover */
+           if( (clear_error != 0) || ( digitalRead( ROTARY_BTN ) == LOW ) )  /* if the user pressed the button we try to recover */
            {
             Station.Frontend.display_invert(0); //display.invertDisplay(0);
+            clear_error=0;
             state= RECOVER;
            }
            
@@ -304,6 +307,108 @@ void loop()
           
         } break;
       }
+}
+
+/*************************************************************************************************************
+ *                                          command_if_update_setpoint()
+ *************************************************************************************************************
+ Function:    command_if_update_setpoint()
+ Input:       None 
+ Output:      None
+ Description: Sets the setpoint from a command interface
+ *************************************************************************************************************/   
+void command_if_update_setpoint( uint16_t newsetpoint )
+{
+  /* saintiy check */
+  if( (newsetpoint >= MIN_TEMP) && ( newsetpoint<= MAX_TEMP)){
+  
+      /* depending on the state we need to decide if we write to the setpoint or LastActiveTemp */
+      switch( state ){
+        case SLEEP:
+        case POWERSAVE:{
+            LastActiveTemp = newsetpoint;
+        } break;
+
+        default:{
+            setpoint = newsetpoint;
+        } break;
+      }
+  }
+
+}
+
+/*************************************************************************************************************
+ *                                          command_if_get_setpoint()
+ *************************************************************************************************************
+ Function:    command_if_get_setpoint()
+ Input:       None 
+ Output:      None
+ Description: returns the setpoint to a command inteface
+ *************************************************************************************************************/   
+uint16_t command_if_get_setpoint( void ){
+     uint16_t value = 0;
+     /* depending on the state we need to decide if we to read the setpoint or LastActiveTemp */
+      switch( state ){
+        case SLEEP:
+        case POWERSAVE:{
+            value = LastActiveTemp ;
+        } break;
+
+        default:{
+          value = setpoint;
+        } break;
+      }
+      return value;
+}
+
+/*************************************************************************************************************
+ *                                          command_if_get_temperature()
+ *************************************************************************************************************
+ Function:    command_if_get_temperature()
+ Input:       None 
+ Output:      None
+ Description: returns the current temperatur to a command interface
+ *************************************************************************************************************/   
+uint16_t command_if_get_temperature( void ){
+  return display_Temp;
+
+}
+
+/*************************************************************************************************************
+ *                                          command_if_get_error()
+ *************************************************************************************************************
+ Function:    command_if_get_error()
+ Input:       None 
+ Output:      None
+ Description: returns the current error to the command interface
+ *************************************************************************************************************/   
+uint8_t command_if_get_error( void ){
+  switch(state){
+    case WAIT:
+    case TEMPSENS_FAIL:{
+      return 0x80 + ErrNo;
+    }break;
+
+    case UNDERVOLTAGE:{
+      return 0x40;
+    }break;
+
+    default:{
+      return 0;
+    } break;
+  }
+}
+
+/*************************************************************************************************************
+ *                                          command_if_clear_error()
+ *************************************************************************************************************
+ Function:    command_if_clear_error()
+ Input:       None 
+ Output:      None
+ Description: clears the error form a command interface
+ *************************************************************************************************************/   
+void command_if_clear_error( void ){
+  clear_error++;
 }
 
 /*************************************************************************************************************
