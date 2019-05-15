@@ -23,7 +23,7 @@ the serial port with the terminal form the arduino ide or putty / puttytel or an
 you are forced to set a baudrate choose 115200, as this is serial over usb the device basically don't care. 
 As we have the leonardo bootloader on the chip don't user 1200 baud, as this may triggers the bootlloader. 
 
-##### Supported commands
+##### Supported commands of the console
 
 * set/get setpoint [xxx] -> This will set or get the setpoint
 * get temperature        -> This will report the current temperature
